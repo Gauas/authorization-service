@@ -5,7 +5,7 @@ metadata:
   namespace: bao-${DEPLOY_ENV}-env
 spec:
   selector:
-    app: gau-authorization-http-sservice
+    app: gau-authorization-http-service
   ports:
     - name: http
       port: 8080
