@@ -1,11 +1,11 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: gau-authorization-service
+  name: gau-authorization-http-service
   namespace: bao-${DEPLOY_ENV}-env
 spec:
   selector:
-    app: gau-authorization-service
+    app: gau-authorization-http-sservice
   ports:
     - name: http
       port: 8080

@@ -1,27 +1,27 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: gau-authorization-deployment
+  name: gau-authorization-http-deployment
   namespace: bao-${DEPLOY_ENV}-env
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: gau-authorization-service
+      app: gau-authorization-http-service
   template:
     metadata:
       labels:
-        app: gau-authorization-service
+        app: gau-authorization-http-service
     spec:
       containers:
-        - name: gau-authorization-service
+        - name: gau-authorization-http-service
           image: iamqbao/gau_authorization_service:latest
           imagePullPolicy: Always
           envFrom:
             - configMapRef:
-                name: bao-authorization-${DEPLOY_ENV}-config
+                name: gau-authorization-${DEPLOY_ENV}-config
             - secretRef:
-                name: bao-authorization-${DEPLOY_ENV}-secret
+                name: gau-authorization-${DEPLOY_ENV}-secret
           resources:
             requests:
               cpu: "50m"
@@ -50,9 +50,9 @@ spec:
         - name: redis-authorization-service
           envFrom:
             - configMapRef:
-                name: bao-authorization-${DEPLOY_ENV}-config
+                name: gau-authorization-${DEPLOY_ENV}-config
             - secretRef:
-                name: bao-authorization-${DEPLOY_ENV}-secret
+                name: gau-authorization-${DEPLOY_ENV}-secret
           image: redis:7.2-alpine
           resources:
             requests:
