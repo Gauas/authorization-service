@@ -83,7 +83,7 @@ func (c *Client) ValidateToken(ctx context.Context, token string) (*ValidateResu
 }
 
 func (c *Client) RenewToken(ctx context.Context, refreshToken, deviceID string) (*RenewResult, error) {
-	req, err := c.newRequest(ctx, http.MethodPost, "/v1/authorization/token/renew", nil)
+	req, err := c.newRequest(ctx, http.MethodGet, "/v1/authorization/token/renew", nil)
 	if err != nil {
 		return nil, err
 	}

@@ -27,6 +27,6 @@ func (r *Router) RegisterRoutes() {
 	token := api.Group("/token", r.internalAuth)
 	token.POST("", r.controller.CreateToken)
 	token.GET("/validate", r.controller.ValidateToken)
-	token.POST("/renew", r.controller.RenewToken)
+	token.GET("/renew", r.controller.RenewToken)
 	token.DELETE("", r.controller.RevokeToken)
 }
