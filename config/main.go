@@ -80,7 +80,7 @@ func fromSDK() Config {
 
 	client := sdk.New(sdk.Options{
 		BaseURL:   mustEnv("CONFIG_SERVICE_URL"),
-		SecretKey: mustEnv("CONFIG_SECRET_KEY"),
+		SecretKey: mustEnv("SECRET_KEY"),
 	})
 
 	remote, err := client.Get("authorization-service", mustEnv("ENVIRONMENT"))
