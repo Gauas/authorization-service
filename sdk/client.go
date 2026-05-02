@@ -14,14 +14,14 @@ import (
 
 type Client struct {
 	baseURL    string
-	privateKey string
+	secretKey  string
 	httpClient *http.Client
 }
 
 type Options struct {
-	BaseURL    string
-	PrivateKey string
-	Timeout    time.Duration
+	BaseURL   string
+	SecretKey string
+	Timeout   time.Duration
 }
 
 func New(opts Options) *Client {
@@ -31,7 +31,7 @@ func New(opts Options) *Client {
 	}
 	return &Client{
 		baseURL:    opts.BaseURL,
-		privateKey: opts.PrivateKey,
+		secretKey:  opts.SecretKey,
 		httpClient: &http.Client{Timeout: timeout},
 	}
 }
@@ -70,7 +70,7 @@ func (c *Client) ValidateToken(ctx context.Context, token string) (*ValidateResu
 		return nil, fmt.Errorf("auth-sdk: create request: %w", err)
 	}
 	req.Header.Set("Authorization", "Bearer "+token)
-	req.Header.Set("Private-Key", c.privateKey)
+	req.Header.Set("Secret-Key", c.secretKey)
 
 	var result struct {
 		apiResponse
@@ -123,7 +123,7 @@ func (c *Client) newRequest(ctx context.Context, method, path string, body io.Re
 	if err != nil {
 		return nil, fmt.Errorf("auth-sdk: create request: %w", err)
 	}
-	req.Header.Set("Private-Key", c.privateKey)
+	req.Header.Set("Secret-Key", c.secretKey)
 	return req, nil
 }
 

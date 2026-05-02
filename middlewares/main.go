@@ -26,7 +26,7 @@ func (m *Middleware) RegisterGlobal(server *echo.Echo) {
 func (m *Middleware) Internal() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			key := c.Request().Header.Get("Private-Key")
+			key := c.Request().Header.Get("Secret-Key")
 			if subtle.ConstantTimeCompare([]byte(key), []byte(m.secretKey)) != 1 {
 				return echo.NewHTTPError(http.StatusUnauthorized, "unauthorized")
 			}
