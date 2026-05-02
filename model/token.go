@@ -17,3 +17,5 @@ type Token struct {
 	RevokedAt    *time.Time `gorm:"default:null"`
 	CreatedAt    time.Time
 }
+
+func (Token) TableName() string { return "refresh_tokens" }

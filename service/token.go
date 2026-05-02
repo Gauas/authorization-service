@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/gauas/authorization-service/model"
 	"github.com/gauas/authorization-service/packages/jwt"
 	"github.com/gauas/authorization-service/packages/memory"
 )
@@ -45,16 +46,29 @@ func (s *Service) CreateToken(ctx context.Context, userID uuid.UUID, permission,
 	}
 
 	ttl := time.Duration(s.config.RefreshTTLDays) * 24 * time.Hour
+	now := time.Now()
+
+	if _, err := s.repo.Token.Create(ctx, &model.Token{
+		UserID:       userID,
+		DeviceID:     deviceID,
+		Permission:   permission,
+		RefreshToken: refreshToken,
+		IssuedAt:     now,
+		ExpiresAt:    now.Add(ttl),
+	}); err != nil {
+		return nil, fmt.Errorf("service: persist refresh token: %w", err)
+	}
+
 	data := memory.RefreshTokenData{
 		UserID:     userID,
 		DeviceID:   deviceID,
 		Permission: permission,
-		IssuedAt:   time.Now(),
+		IssuedAt:   now,
 		TokenID:    tokenID,
 	}
-
 	if err := s.memory.StoreRefreshToken(ctx, refreshToken, data, ttl); err != nil {
-		return nil, fmt.Errorf("service: store refresh token: %w", err)
+		_ = s.repo.Token.Delete(ctx, "refresh_token = ?", refreshToken)
+		return nil, fmt.Errorf("service: cache refresh token: %w", err)
 	}
 
 	_ = s.memory.TrackTokenForDevice(ctx, userID, deviceID, refreshToken, ttl)
@@ -138,6 +152,6 @@ func (s *Service) RevokeToken(ctx context.Context, refreshToken, deviceID string
 
 	accessTTL := time.Duration(s.config.JWTExpireSecs) * time.Second
 	_ = s.memory.BlacklistToken(ctx, data.UserID, data.TokenID, accessTTL)
-
+	_ = s.repo.Token.Delete(ctx, "refresh_token = ?", refreshToken)
 	return s.memory.DeleteRefreshToken(ctx, refreshToken)
 }
