@@ -3,6 +3,7 @@ package memory
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -37,7 +38,7 @@ func (s *Store) StoreRefreshToken(ctx context.Context, token string, data Refres
 
 func (s *Store) GetRefreshToken(ctx context.Context, token string) (*RefreshTokenData, error) {
 	raw, err := s.client.Get(ctx, refreshKey(token)).Bytes()
-	if err == redis.Nil {
+	if errors.Is(err, redis.Nil) {
 		return nil, nil
 	}
 	if err != nil {
