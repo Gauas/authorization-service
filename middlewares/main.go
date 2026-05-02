@@ -1,27 +1,36 @@
 package middlewares
 
 import (
-	"github.com/gin-gonic/gin"
-	"github.com/tnqbao/gau-authorization-service/controller"
+	"crypto/subtle"
+	"net/http"
+
+	"github.com/labstack/echo/v4"
+	echoMiddleware "github.com/labstack/echo/v4/middleware"
+	"github.com/gauas/authorization-service/config"
 )
 
-type Middlewares struct {
-	CORSMiddleware     gin.HandlerFunc
-	PrivateMiddlewares gin.HandlerFunc
+type Middleware struct {
+	secretKey string
 }
 
-func NewMiddlewares(ctrl *controller.Controller) (*Middlewares, error) {
-	cors := CORSMiddleware(ctrl.Config.EnvConfig)
-	if cors == nil {
-		return nil, nil
-	}
-	private := PrivateMiddleware(ctrl.Config.EnvConfig)
-	if private == nil {
-		return nil, nil
-	}
+func New(cfg config.Config) *Middleware {
+	return &Middleware{secretKey: cfg.SecretKey}
+}
 
-	return &Middlewares{
-		CORSMiddleware:     cors,
-		PrivateMiddlewares: private,
-	}, nil
+func (m *Middleware) RegisterGlobal(server *echo.Echo) {
+	server.Use(echoMiddleware.Recover())
+	server.Use(echoMiddleware.Logger())
+	server.Use(echoMiddleware.RequestID())
+}
+
+func (m *Middleware) Internal() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			key := c.Request().Header.Get("Private-Key")
+			if subtle.ConstantTimeCompare([]byte(key), []byte(m.secretKey)) != 1 {
+				return echo.NewHTTPError(http.StatusUnauthorized, "unauthorized")
+			}
+			return next(c)
+		}
+	}
 }
