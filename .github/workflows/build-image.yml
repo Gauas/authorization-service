@@ -1,8 +1,9 @@
-name: build-and-deploy-staging
+name: build-image
 
 on:
   pull_request:
-    branches: [dev]
+    branches:
+      - develop
   workflow_dispatch: {}
 
 jobs:
@@ -12,6 +13,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate version
+        id: version
+        run: echo "VERSION=0.0.$(git rev-list --count HEAD)" >> $GITHUB_OUTPUT
 
       - name: Login to DockerHub
         uses: docker/login-action@v3
@@ -30,5 +37,6 @@ jobs:
         with:
           context: .
           push: true
-          tags: iamqbao/gau_authorization_service:latest
-
+          tags: |
+            gauaslab/authorization-service:latest
+            gauaslab/authorization-service:${{ steps.version.outputs.VERSION }}

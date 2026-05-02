@@ -3,3 +3,4 @@ vscode
 .env
 base
 kubeconfig.yaml
+.config/

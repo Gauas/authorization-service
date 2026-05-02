@@ -1,0 +1,39 @@
+name: Database Migration
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - "migrations/**"
+  workflow_dispatch:
+
+jobs:
+  migrate:
+    name: Run Migrations
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Tailscale
+        run: curl -fsSL https://tailscale.com/install.sh | sh
+
+      - name: Start Tailscale and authenticate
+        run: |
+          sudo tailscaled &
+          sleep 3
+          sudo tailscale up --authkey ${{ secrets.TS_AUTHKEY }}
+          sleep 5
+
+      - name: Install go-migrate
+        run: |
+          curl -fsSL \
+            https://github.com/golang-migrate/migrate/releases/download/v4.17.1/migrate.linux-amd64.tar.gz \
+            | tar -xvz migrate
+          sudo mv migrate /usr/local/bin/migrate
+
+      - name: Run migrations
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: migrate -database "$DATABASE_URL" -path migrations up

@@ -1,31 +1,28 @@
-FROM golang:1.25-alpine AS builder
+FROM golang:1.23-alpine AS builder
 
-WORKDIR /gau_authorization
+WORKDIR /build
+
+RUN apk add --no-cache git
 
 COPY go.mod go.sum ./
-RUN go mod tidy && go mod download
+RUN go mod download
 
 COPY . .
-RUN go build -o gau-authorization-service.bin .
 
-FROM alpine:latest
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+    go build -trimpath -ldflags="-s -w" -o app ./cmd
 
-WORKDIR /gau_authorization
+FROM alpine:3.21
 
-RUN apk add --no-cache \
-    bash \
-    ca-certificates \
-    curl \
-    tzdata \
-    && curl -L https://github.com/golang-migrate/migrate/releases/download/v4.18.3/migrate.linux-amd64.tar.gz \
-    | tar xvz -C /tmp \
-    && mv /tmp/migrate /usr/local/bin/migrate \
-    && chmod +x /usr/local/bin/migrate
+RUN apk add --no-cache ca-certificates tzdata && \
+    addgroup -S app && adduser -S -G app app
 
-COPY --from=builder /gau_authorization/gau-authorization-service.bin .
-COPY migrations ./migrations
-COPY entrypoint.sh .
+WORKDIR /app
 
-RUN chmod +x entrypoint.sh
+COPY --from=builder /build/app .
 
-ENTRYPOINT ["./entrypoint.sh"]
+USER app
+
+EXPOSE 8080
+
+ENTRYPOINT ["./app"]
