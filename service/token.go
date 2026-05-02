@@ -53,7 +53,6 @@ func (s *Service) CreateToken(ctx context.Context, userID uuid.UUID, permission,
 		DeviceID:     deviceID,
 		Permission:   permission,
 		RefreshToken: refreshToken,
-		IssuedAt:     now,
 		ExpiresAt:    now.Add(ttl),
 	}); err != nil {
 		return nil, fmt.Errorf("service: persist refresh token: %w", err)
@@ -63,7 +62,6 @@ func (s *Service) CreateToken(ctx context.Context, userID uuid.UUID, permission,
 		UserID:     userID,
 		DeviceID:   deviceID,
 		Permission: permission,
-		IssuedAt:   now,
 		TokenID:    tokenID,
 	}
 	if err := s.memory.StoreRefreshToken(ctx, refreshToken, data, ttl); err != nil {

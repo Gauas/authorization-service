@@ -15,7 +15,6 @@ type RefreshTokenData struct {
 	UserID     uuid.UUID `json:"user_id"`
 	DeviceID   string    `json:"device_id"`
 	Permission string    `json:"permission"`
-	IssuedAt   time.Time `json:"issued_at"`
 	TokenID    int64     `json:"token_id"`
 }
 

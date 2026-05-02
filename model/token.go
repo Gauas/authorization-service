@@ -12,9 +12,8 @@ type Token struct {
 	DeviceID     string     `gorm:"not null"`
 	Permission   string     `gorm:"not null"`
 	RefreshToken string     `gorm:"uniqueIndex;not null"`
-	IssuedAt     time.Time  `gorm:"not null"`
 	ExpiresAt    time.Time  `gorm:"not null"`
-	RevokedAt    *time.Time `gorm:"default:null"`
+	RevokedAt    *time.Time `gorm:"softDelete;default:null"`
 	CreatedAt    time.Time
 }
 
