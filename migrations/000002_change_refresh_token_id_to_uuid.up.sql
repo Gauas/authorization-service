@@ -18,3 +18,4 @@ ALTER TABLE refresh_tokens RENAME COLUMN uuid_id TO id;
 
 -- Add new primary key constraint
 ALTER TABLE refresh_tokens ADD CONSTRAINT refresh_tokens_pkey PRIMARY KEY (id);
+
