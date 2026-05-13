@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type Token struct {
@@ -13,7 +14,7 @@ type Token struct {
 	Permission   string     `gorm:"not null"`
 	RefreshToken string     `gorm:"uniqueIndex;not null"`
 	ExpiresAt    time.Time  `gorm:"not null"`
-	RevokedAt    *time.Time `gorm:"softDelete;default:null"`
+	RevokedAt    gorm.DeletedAt `gorm:"column:revoked_at"`
 	CreatedAt    time.Time
 }
 
