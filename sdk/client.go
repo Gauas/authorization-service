@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/gauas/authorization-service/supports"
 )
 
 type Client struct {
@@ -37,10 +38,13 @@ func New(opts Options) *Client {
 }
 
 func (c *Client) CreateToken(ctx context.Context, userID uuid.UUID, permission, deviceID string) (*TokenPair, error) {
-	body, _ := json.Marshal(map[string]interface{}{
+	body, err := json.Marshal(map[string]interface{}{
 		"user_id":    userID,
 		"permission": permission,
 	})
+	if err != nil {
+		return nil, fmt.Errorf("auth-sdk: marshal request: %w", err)
+	}
 
 	req, err := c.newRequest(ctx, http.MethodPost, "/v1/authorization/token", bytes.NewBuffer(body))
 	if err != nil {
@@ -135,13 +139,13 @@ func (c *Client) do(req *http.Request, dest interface{}) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode >= 400 {
-		raw, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("unexpected status %d: %s", resp.StatusCode, raw)
+		return fmt.Errorf("unexpected status %d: %s", resp.StatusCode, supports.ReadBody(resp.Body))
 	}
-	if dest != nil {
-		if err := json.NewDecoder(resp.Body).Decode(dest); err != nil {
-			return fmt.Errorf("decode response: %w", err)
-		}
+	if dest == nil {
+		return nil
+	}
+	if err := json.NewDecoder(resp.Body).Decode(dest); err != nil {
+		return fmt.Errorf("decode response: %w", err)
 	}
 	return nil
 }
