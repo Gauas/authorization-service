@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/gauas/authorization-service/supports"
+	"github.com/google/uuid"
 )
 
 type Client struct {
