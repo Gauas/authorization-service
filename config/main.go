@@ -63,8 +63,8 @@ func fromFile() (Config, bool) {
 		Port:           get("PORT"),
 		SecretKey:      get("SECRET_KEY"),
 		JWTSecretKey:   get("JWT_SECRET_KEY"),
-		JWTExpireSecs:  900,
-		RefreshTTLDays: 30,
+		JWTExpireSecs:  getEnvInt("JWT_EXPIRE_SECS", 900),
+		RefreshTTLDays: getEnvInt("REFRESH_TTL_DAYS", 30),
 		DBUrl:          get("DB_URL"),
 		CacheURL:       get("CACHE_URL"),
 	}

@@ -6,17 +6,18 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/gauas/authorization-service/model"
 	"github.com/gauas/authorization-service/packages/jwt"
 	"github.com/gauas/authorization-service/packages/memory"
+	"github.com/google/uuid"
 )
 
 type TokenPair struct {
-	AccessToken  string    `json:"access_token"`
-	RefreshToken string    `json:"refresh_token"`
-	ExpiresIn    int       `json:"expires_in"`
-	ExpiresAt    time.Time `json:"-"`
+	AccessToken      string    `json:"access_token"`
+	RefreshToken     string    `json:"refresh_token"`
+	ExpiresIn        int       `json:"expires_in"`
+	ExpiresAt        time.Time `json:"-"`
+	RefreshExpiresAt time.Time `json:"-"`
 }
 
 type RenewResult struct {
@@ -72,10 +73,11 @@ func (s *Service) CreateToken(ctx context.Context, userID uuid.UUID, permission,
 	_ = s.memory.TrackTokenForDevice(ctx, userID, deviceID, refreshToken, ttl)
 
 	return &TokenPair{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		ExpiresIn:    int(time.Until(expiresAt).Seconds()),
-		ExpiresAt:    expiresAt,
+		AccessToken:      accessToken,
+		RefreshToken:     refreshToken,
+		ExpiresIn:        int(time.Until(expiresAt).Seconds()),
+		ExpiresAt:        expiresAt,
+		RefreshExpiresAt: now.Add(ttl),
 	}, nil
 }
 
