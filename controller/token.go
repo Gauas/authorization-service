@@ -8,6 +8,8 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+const BEARER_PREFIX = "Bearer "
+
 type createTokenRequest struct {
 	UserID     uuid.UUID `json:"user_id"`
 	Permission string    `json:"permission"`
@@ -36,13 +38,7 @@ func (c *Controller) CreateToken(ctx echo.Context) error {
 }
 
 func (c *Controller) ValidateToken(ctx echo.Context) error {
-	tokenStr := ctx.QueryParam("token")
-	if tokenStr == "" {
-		auth := ctx.Request().Header.Get("Authorization")
-		if len(auth) > 7 && auth[:7] == "Bearer " {
-			tokenStr = auth[7:]
-		}
-	}
+	tokenStr := tokenFromReq(ctx)
 	if tokenStr == "" {
 		return response.NewError(http.StatusBadRequest, "token is required")
 	}
@@ -57,6 +53,22 @@ func (c *Controller) ValidateToken(ctx echo.Context) error {
 		"permission": claims.Permission,
 		"device_id":  claims.DeviceID,
 	})
+}
+
+func tokenFromReq(ctx echo.Context) string {
+	token := ctx.QueryParam("token")
+	if token != "" {
+		return token
+	}
+
+	auth := ctx.Request().Header.Get("Authorization")
+	if len(auth) <= len(BEARER_PREFIX) {
+		return ""
+	}
+	if auth[:len(BEARER_PREFIX)] != BEARER_PREFIX {
+		return ""
+	}
+	return auth[len(BEARER_PREFIX):]
 }
 
 func (c *Controller) RenewToken(ctx echo.Context) error {
