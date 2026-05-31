@@ -8,12 +8,13 @@ import (
 )
 
 type Token struct {
-	ID           uuid.UUID  `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
-	UserID       uuid.UUID  `gorm:"type:uuid;not null;index"`
-	DeviceID     string     `gorm:"not null"`
-	Permission   string     `gorm:"not null"`
-	RefreshToken string     `gorm:"uniqueIndex;not null"`
-	ExpiresAt    time.Time  `gorm:"not null"`
+	ID           int64          `gorm:"type:bigint;primaryKey;autoIncrement"`
+	Key          uuid.UUID      `gorm:"type:uuid;uniqueIndex;not null"`
+	UserID       uuid.UUID      `gorm:"type:uuid;not null;index"`
+	DeviceID     string         `gorm:"not null"`
+	Permission   string         `gorm:"not null"`
+	RefreshToken string         `gorm:"uniqueIndex;not null"`
+	ExpiresAt    time.Time      `gorm:"not null"`
 	RevokedAt    gorm.DeletedAt `gorm:"column:revoked_at"`
 	CreatedAt    time.Time
 }

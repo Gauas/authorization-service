@@ -9,7 +9,7 @@ import (
 	"github.com/gauas/authorization-service/config"
 	"github.com/gauas/authorization-service/controller"
 	"github.com/gauas/authorization-service/middlewares"
-	"github.com/gauas/authorization-service/packages/response"
+	response "github.com/gauas/authorization-service/packages/httpresp"
 	"github.com/gauas/authorization-service/route"
 	"github.com/labstack/echo/v4"
 )
@@ -46,7 +46,7 @@ func (k *Kernel) Start() {
 
 	k.middleware.RegisterGlobal(server)
 
-	routerInstance := route.New(server, k.controller, k.middleware.Internal())
+	routerInstance := route.New(server, k.controller, k.middleware.Internal(), k.middleware.TokenSource())
 	routerInstance.RegisterRoutes()
 
 	addr := fmt.Sprintf(":%s", k.config.Port)
@@ -56,3 +56,5 @@ func (k *Kernel) Start() {
 		log.Fatal(err)
 	}
 }
+
+

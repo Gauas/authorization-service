@@ -4,7 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 
-	"github.com/gauas/authorization-service/packages/response"
+	response "github.com/gauas/authorization-service/packages/httpresp"
 )
 
 func generateToken() (string, error) {
@@ -18,3 +18,5 @@ func generateToken() (string, error) {
 func appError(code int, msg string) error {
 	return response.NewError(code, msg)
 }
+
+

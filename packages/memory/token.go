@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gauas/authorization-service/packages/bitmap"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 )
@@ -16,14 +17,6 @@ type RefreshTokenData struct {
 	DeviceID   string    `json:"device_id"`
 	Permission string    `json:"permission"`
 	TokenID    int64     `json:"token_id"`
-}
-
-func (s *Store) NextTokenID(ctx context.Context, userID uuid.UUID) (int64, error) {
-	id, err := s.client.Incr(ctx, tokenSeqKey(userID)).Result()
-	if err != nil {
-		return 0, fmt.Errorf("memory: next token id: %w", err)
-	}
-	return id, nil
 }
 
 func (s *Store) StoreRefreshToken(ctx context.Context, token string, data RefreshTokenData, ttl time.Duration) error {
@@ -68,12 +61,15 @@ func (s *Store) TrackTokenForDevice(ctx context.Context, userID uuid.UUID, devic
 	return err
 }
 
-func (s *Store) BlacklistToken(ctx context.Context, userID uuid.UUID, tokenID int64, ttl time.Duration) error {
-	key := blacklistKey(userID)
+func (s *Store) BlacklistToken(ctx context.Context, tokenID int64, ttl time.Duration) error {
+	offset, ok := bitmap.Offset(tokenID)
+	if !ok {
+		return fmt.Errorf("memory: invalid token id")
+	}
+	_ = ttl
 
 	pipe := s.client.Pipeline()
-	pipe.SetBit(ctx, key, tokenID, 1)
-	pipe.Expire(ctx, key, ttl)
+	pipe.SetBit(ctx, blacklistBucketKey(time.Now().UTC()), offset, 1)
 
 	_, err := pipe.Exec(ctx)
 	if err != nil {
@@ -82,10 +78,24 @@ func (s *Store) BlacklistToken(ctx context.Context, userID uuid.UUID, tokenID in
 	return nil
 }
 
-func (s *Store) IsTokenBlacklisted(ctx context.Context, userID uuid.UUID, tokenID int64) (bool, error) {
-	bit, err := s.client.GetBit(ctx, blacklistKey(userID), tokenID).Result()
-	if err != nil {
-		return false, fmt.Errorf("memory: check blacklist: %w", err)
+func (s *Store) IsTokenBlacklisted(ctx context.Context, tokenID int64, windowDays int) (bool, error) {
+	offset, ok := bitmap.Offset(tokenID)
+	if !ok {
+		return false, nil
 	}
-	return bit == 1, nil
+	if windowDays < 1 {
+		windowDays = 1
+	}
+	now := time.Now().UTC()
+	for i := 0; i < windowDays; i++ {
+		day := now.AddDate(0, 0, -i)
+		bit, err := s.client.GetBit(ctx, blacklistBucketKey(day), offset).Result()
+		if err != nil {
+			return false, fmt.Errorf("memory: check blacklist: %w", err)
+		}
+		if bit == 1 {
+			return true, nil
+		}
+	}
+	return false, nil
 }
