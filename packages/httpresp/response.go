@@ -1,4 +1,4 @@
-package response
+package httpresp
 
 import (
 	"errors"
@@ -30,5 +30,7 @@ func Wrap(err error) error {
 	if errors.Is(err, redis.Nil) {
 		return ErrorNotFound
 	}
-	return NewError(http.StatusInternalServerError, "internal server error")
+	return err
 }
+
+

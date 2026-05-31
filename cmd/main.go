@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 
 	"github.com/gauas/authorization-service/config"
@@ -21,6 +22,7 @@ func main() {
 	repositoryInstance := repository.New(infraInstance.DB)
 
 	memoryInstance := memory.New(infraInstance.Memory)
+	memoryInstance.StartBlacklistGC(context.Background(), Config.RefreshTTLDays)
 
 	serviceInstance := service.New(repositoryInstance, memoryInstance, Config)
 

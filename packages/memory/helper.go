@@ -1,6 +1,9 @@
 package memory
 
 import "fmt"
+import "time"
+
+const DAY_FMT = "20060102"
 
 func refreshKey(token string) string {
 	return fmt.Sprintf("auth:refresh:%s", token)
@@ -10,10 +13,10 @@ func deviceIndexKey(userID interface{}, deviceID string) string {
 	return fmt.Sprintf("auth:device:%s:%s", userID, deviceID)
 }
 
-func blacklistKey(userID interface{}) string {
-	return fmt.Sprintf("auth:blacklist:%s", userID)
+func globalBlacklistKey() string {
+	return "auth:blacklists"
 }
 
-func tokenSeqKey(userID interface{}) string {
-	return fmt.Sprintf("auth:token:seq:%s", userID)
+func blacklistBucketKey(day time.Time) string {
+	return fmt.Sprintf("%s:%s", globalBlacklistKey(), day.UTC().Format(DAY_FMT))
 }
