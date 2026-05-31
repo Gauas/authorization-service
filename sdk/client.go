@@ -87,9 +87,9 @@ func (c *Client) ValidateToken(ctx context.Context, token string) (*ValidateResu
 }
 
 func (c *Client) RenewToken(ctx context.Context, refreshToken, deviceID string) (*RenewResult, error) {
-	req, err := c.newRequest(ctx, http.MethodGet, "/v1/authorization/token/renew", nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+"/v1/authorization/token/renew", nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("auth-sdk: create request: %w", err)
 	}
 	req.Header.Set("X-Refresh-Token", refreshToken)
 	req.Header.Set("X-Device-ID", deviceID)
