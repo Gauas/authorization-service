@@ -3,7 +3,6 @@ module github.com/gauas/authorization-service
 go 1.23
 
 require (
-	github.com/gauas/config-service v1.0.5
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1

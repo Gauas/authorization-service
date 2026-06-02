@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/gauas/config-service/sdk"
 	"github.com/joho/godotenv"
 )
 
@@ -23,7 +22,7 @@ func New() Config {
 	if cfg, ok := fromFile(); ok {
 		return cfg
 	}
-	return fromSDK()
+	return fromEnv()
 }
 
 func validate(cfg Config) {
@@ -73,29 +72,17 @@ func fromFile() (Config, bool) {
 	return cfg, true
 }
 
-func fromSDK() Config {
+func fromEnv() Config {
 	_ = godotenv.Load()
 
-	secretKey := mustEnv("SECRET_KEY")
-
-	client := sdk.New(sdk.Options{
-		BaseURL:   mustEnv("CONFIG_SERVICE_URL"),
-		SecretKey: mustEnv("SECRET_KEY"),
-	})
-
-	remote, err := client.Get("authorization-service", mustEnv("ENVIRONMENT"))
-	if err != nil {
-		log.Fatalf("config: %v", err)
-	}
-
 	cfg := Config{
-		Port:           remote.GetString("PORT", "8080"),
-		SecretKey:      secretKey,
-		JWTSecretKey:   remote.GetString("JWT_SECRET_KEY", ""),
-		JWTExpireSecs:  int(remote.GetFloat64("JWT_EXPIRE_SECS", 900)),
-		RefreshTTLDays: int(remote.GetFloat64("REFRESH_TTL_DAYS", 30)),
-		DBUrl:          remote.GetString("DB_URL", ""),
-		CacheURL:       remote.GetString("CACHE_URL", "redis://localhost:6379/0"),
+		Port:           getEnv("PORT", "8080"),
+		SecretKey:      mustEnv("SECRET_KEY"),
+		JWTSecretKey:   mustEnv("JWT_SECRET_KEY"),
+		JWTExpireSecs:  getEnvInt("JWT_EXPIRE_SECS", 900),
+		RefreshTTLDays: getEnvInt("REFRESH_TTL_DAYS", 30),
+		DBUrl:          mustEnv("DB_URL"),
+		CacheURL:       getEnv("CACHE_URL", "redis://localhost:6379/0"),
 	}
 
 	validate(cfg)
