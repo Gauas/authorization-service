@@ -25,9 +25,13 @@ func (r *Router) RegisterRoutes() {
 		return c.JSON(http.StatusOK, echo.Map{"status": "ok"})
 	})
 
-	token := api.Group("/token", r.internalAuth, r.tokenSource)
-	token.POST("", r.controller.CreateToken)
-	token.GET("/validate", r.controller.ValidateToken)
-	token.GET("/renew", r.controller.RenewToken)
-	token.DELETE("", r.controller.RevokeToken)
+	token := api.Group("/token")
+
+	internalToken := token.Group("", r.internalAuth, r.tokenSource)
+	internalToken.POST("", r.controller.CreateToken)
+	internalToken.GET("/validate", r.controller.ValidateToken)
+	internalToken.DELETE("", r.controller.RevokeToken)
+
+	renewToken := token.Group("", r.tokenSource)
+	renewToken.GET("/renew", r.controller.RenewToken)
 }
