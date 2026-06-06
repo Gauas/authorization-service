@@ -1,10 +1,12 @@
-package kernel
+package http
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gauas/authorization-service/config"
 	"github.com/gauas/authorization-service/controller"
@@ -20,11 +22,11 @@ type Kernel struct {
 	config     config.Config
 }
 
-func New(ctrl *controller.Controller, mw *middlewares.Middleware, cfg config.Config) *Kernel {
+func Register(ctrl *controller.Controller, mw *middlewares.Middleware, cfg config.Config) *Kernel {
 	return &Kernel{controller: ctrl, middleware: mw, config: cfg}
 }
 
-func (k *Kernel) Start() {
+func (k *Kernel) Start(ctx context.Context) error {
 	server := echo.New()
 	server.HideBanner = true
 	server.HTTPErrorHandler = func(err error, c echo.Context) {
@@ -50,11 +52,21 @@ func (k *Kernel) Start() {
 	routerInstance.RegisterRoutes()
 
 	addr := fmt.Sprintf(":%s", k.config.Port)
-	log.Printf("authorization-service listening on %s", addr)
 
-	if err := server.Start(addr); err != nil && err != http.ErrServerClosed {
-		log.Fatal(err)
+	go func() {
+		<-ctx.Done()
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		if err := server.Shutdown(shutdownCtx); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Printf("authorization-service http shutdown error: %v", err)
+		}
+	}()
+
+	log.Printf("authorization-service http listening on %s", addr)
+	if err := server.Start(addr); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		return fmt.Errorf("http server: %w", err)
 	}
+
+	return nil
 }
-
-

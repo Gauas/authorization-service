@@ -9,6 +9,7 @@ import (
 
 type Config struct {
 	Port           string
+	GRPCPort       string
 	SecretKey      string
 	JWTSecretKey   string
 	JWTExpireSecs  int
@@ -38,6 +39,7 @@ func fromEnv() Config {
 
 	cfg := Config{
 		Port:           getEnv("PORT", "8080"),
+		GRPCPort:       getEnv("GRPC_PORT", "9090"),
 		SecretKey:      mustEnv("SECRET_KEY"),
 		JWTSecretKey:   mustEnv("JWT_SECRET_KEY"),
 		JWTExpireSecs:  getEnvInt("JWT_EXPIRE_SECS", 900),

@@ -10,7 +10,7 @@ RUN go mod download
 COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-    go build -trimpath -ldflags="-s -w" -o app ./cmd
+    go build -trimpath -ldflags="-s -w" -o app .
 
 FROM alpine:3.21
 
@@ -23,6 +23,6 @@ COPY --from=builder /build/app .
 
 USER app
 
-EXPOSE 8080
+EXPOSE 8080 9090
 
 ENTRYPOINT ["./app"]
