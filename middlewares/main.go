@@ -10,6 +10,8 @@ import (
 	echoMiddleware "github.com/labstack/echo/v4/middleware"
 )
 
+var MuteLog = []string{"/v1/authorization/health"}
+
 type Middleware struct {
 	secretKey string
 }
@@ -20,7 +22,17 @@ func New(cfg config.Config) *Middleware {
 
 func (m *Middleware) RegisterGlobal(server *echo.Echo) {
 	server.Use(echoMiddleware.Recover())
-	server.Use(echoMiddleware.Logger())
+	server.Use(echoMiddleware.LoggerWithConfig(echoMiddleware.LoggerConfig{
+		Skipper: func(c echo.Context) bool {
+			for _, path := range MuteLog {
+				if c.Path() == path {
+					return true
+				}
+			}
+
+			return false
+		},
+	}))
 	server.Use(echoMiddleware.RequestID())
 }
 
