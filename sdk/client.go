@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/gauas/authorization-service/supports"
@@ -67,8 +68,8 @@ func (c *Client) CreateToken(ctx context.Context, userID int64, permission, devi
 }
 
 func (c *Client) ValidateToken(ctx context.Context, token string) (*ValidateResult, error) {
-	url := fmt.Sprintf("%s/v1/authorization/token/validate?token=%s", c.baseURL, token)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	validateURL := fmt.Sprintf("%s/v1/authorization/token/validate?token=%s", c.baseURL, url.QueryEscape(token))
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, validateURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("auth-sdk: create request: %w", err)
 	}
