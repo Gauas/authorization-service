@@ -10,7 +10,7 @@ import (
 type Token struct {
 	ID           int64          `gorm:"type:bigint;primaryKey;autoIncrement"`
 	Key          uuid.UUID      `gorm:"type:uuid;uniqueIndex;not null"`
-	UserID       uuid.UUID      `gorm:"type:uuid;not null;index"`
+	UserID       int64          `gorm:"type:bigint;not null;index"`
 	DeviceID     string         `gorm:"not null"`
 	Permission   string         `gorm:"not null"`
 	RefreshToken string         `gorm:"uniqueIndex;not null"`

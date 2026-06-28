@@ -8,15 +8,14 @@ import (
 	"time"
 
 	"github.com/gauas/authorization-service/packages/bitmap"
-	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 )
 
 type RefreshTokenData struct {
-	UserID     uuid.UUID `json:"user_id"`
-	DeviceID   string    `json:"device_id"`
-	Permission string    `json:"permission"`
-	TokenID    int64     `json:"token_id"`
+	UserID     int64  `json:"user_id"`
+	DeviceID   string `json:"device_id"`
+	Permission string `json:"permission"`
+	TokenID    int64  `json:"token_id"`
 }
 
 func (s *Store) StoreRefreshToken(ctx context.Context, token string, data RefreshTokenData, ttl time.Duration) error {
@@ -49,7 +48,7 @@ func (s *Store) DeleteRefreshToken(ctx context.Context, token string) error {
 	return s.client.Del(ctx, refreshKey(token)).Err()
 }
 
-func (s *Store) TrackTokenForDevice(ctx context.Context, userID uuid.UUID, deviceID, token string, ttl time.Duration) error {
+func (s *Store) TrackTokenForDevice(ctx context.Context, userID int64, deviceID, token string, ttl time.Duration) error {
 	indexKey := deviceIndexKey(userID, deviceID)
 
 	pipe := s.client.Pipeline()

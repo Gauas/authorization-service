@@ -5,7 +5,6 @@ import (
 
 	"github.com/gauas/authorization-service/dto/request"
 	"github.com/gauas/authorization-service/packages/httpresp"
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
 
@@ -14,7 +13,7 @@ func (c *Controller) CreateToken(ctx echo.Context) error {
 	if err := ctx.Bind(&req); err != nil {
 		return httpresp.NewError(http.StatusBadRequest, "invalid request body")
 	}
-	if req.UserID == uuid.Nil {
+	if req.UserID <= 0 {
 		return httpresp.NewError(http.StatusBadRequest, "user_id is required")
 	}
 

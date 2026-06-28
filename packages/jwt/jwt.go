@@ -5,14 +5,13 @@ import (
 	"time"
 
 	gojwt "github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
 )
 
 type Claims struct {
-	UserID     uuid.UUID `json:"user_id"`
-	Permission string    `json:"permission"`
-	DeviceID   string    `json:"device_id"`
-	TokenID    int64     `json:"token_id"`
+	UserID     int64  `json:"user_id"`
+	Permission string `json:"permission"`
+	DeviceID   string `json:"device_id"`
+	TokenID    int64  `json:"token_id"`
 	gojwt.RegisteredClaims
 }
 
@@ -25,7 +24,7 @@ func NewManager(secret string, expireSec int) *Manager {
 	return &Manager{secret: []byte(secret), expireSec: expireSec}
 }
 
-func (m *Manager) Sign(userID uuid.UUID, permission, deviceID string, tokenID int64) (string, time.Time, error) {
+func (m *Manager) Sign(userID int64, permission, deviceID string, tokenID int64) (string, time.Time, error) {
 	now := time.Now()
 	exp := now.Add(time.Duration(m.expireSec) * time.Second)
 
@@ -35,7 +34,7 @@ func (m *Manager) Sign(userID uuid.UUID, permission, deviceID string, tokenID in
 		DeviceID:   deviceID,
 		TokenID:    tokenID,
 		RegisteredClaims: gojwt.RegisteredClaims{
-			Subject:   userID.String(),
+			Subject:   fmt.Sprintf("%d", userID),
 			IssuedAt:  gojwt.NewNumericDate(now),
 			ExpiresAt: gojwt.NewNumericDate(exp),
 		},
