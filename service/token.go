@@ -31,7 +31,7 @@ type RenewResult struct {
 	ExpiresAt   time.Time `json:"expires_at"`
 }
 
-func (s *Service) CreateToken(ctx context.Context, userID uuid.UUID, permission, deviceID string) (*TokenPair, error) {
+func (s *Service) CreateToken(ctx context.Context, userID int64, permission, deviceID string) (*TokenPair, error) {
 	if deviceID == "" {
 		return nil, appError(http.StatusBadRequest, "device_id is required")
 	}

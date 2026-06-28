@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gauas/authorization-service/packages/httpresp"
@@ -19,7 +20,7 @@ func (c *Controller) ValidateToken(ctx echo.Context) error {
 	}
 
 	return httpresp.OK(ctx, echo.Map{
-		"user_id":    claims.UserID,
+		"user_id":    fmt.Sprintf("%d", claims.UserID),
 		"permission": claims.Permission,
 		"device_id":  claims.DeviceID,
 	})

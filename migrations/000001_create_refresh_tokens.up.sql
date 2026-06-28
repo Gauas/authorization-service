@@ -2,7 +2,7 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 CREATE TABLE IF NOT EXISTS refresh_tokens (
     id            UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id       UUID        NOT NULL,
+    user_id       BIGINT      NOT NULL,
     device_id     TEXT        NOT NULL,
     permission    TEXT        NOT NULL,
     refresh_token TEXT        NOT NULL UNIQUE,

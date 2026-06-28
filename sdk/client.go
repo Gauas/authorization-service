@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/gauas/authorization-service/supports"
-	"github.com/google/uuid"
 )
 
 type Client struct {
@@ -37,7 +36,7 @@ func New(opts Options) *Client {
 	}
 }
 
-func (c *Client) CreateToken(ctx context.Context, userID uuid.UUID, permission, deviceID string) (*TokenPair, error) {
+func (c *Client) CreateToken(ctx context.Context, userID int64, permission, deviceID string) (*TokenPair, error) {
 	body, err := json.Marshal(map[string]interface{}{
 		"user_id":    userID,
 		"permission": permission,
