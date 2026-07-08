@@ -23,4 +23,3 @@ func RefineList[S any, T any](entities []S) []T {
 	}
 	return out
 }
-

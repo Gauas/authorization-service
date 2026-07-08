@@ -1,24 +1,14 @@
 package service
 
-import (
-	"github.com/gauas/authorization-service/config"
-	"github.com/gauas/authorization-service/packages/jwt"
-	"github.com/gauas/authorization-service/packages/memory"
-	"github.com/gauas/authorization-service/repository"
-)
+import "github.com/gauas/authorization-service/model"
 
 type Service struct {
-	repo   *repository.Registry
-	memory *memory.Store
-	jwt    *jwt.Manager
-	config config.Config
+	Repo   Repository[model.Token]
+	Cache  CacheStore
+	Signer JWTSigner
+	Config Config
 }
 
-func New(repo *repository.Registry, mem *memory.Store, cfg config.Config) *Service {
-	return &Service{
-		repo:   repo,
-		memory: mem,
-		jwt:    jwt.NewManager(cfg.JWTSecretKey, cfg.JWTExpireSecs),
-		config: cfg,
-	}
+func New(repo Repository[model.Token], cache CacheStore, signer JWTSigner, cfg Config) *Service {
+	return &Service{Repo: repo, Cache: cache, Signer: signer, Config: cfg}
 }
