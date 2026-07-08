@@ -56,5 +56,3 @@ func (k *Kernel) Start() {
 		log.Fatal(err)
 	}
 }
-
-

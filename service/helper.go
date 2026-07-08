@@ -18,5 +18,3 @@ func generateToken() (string, error) {
 func appError(code int, msg string) error {
 	return response.NewError(code, msg)
 }
-
-

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	response "github.com/gauas/authorization-service/dto/response"
 	"github.com/gauas/authorization-service/model"
 	"github.com/gauas/authorization-service/packages/jwt"
 	"github.com/gauas/authorization-service/packages/memory"
@@ -17,21 +18,7 @@ const (
 	BLACKLIST_BUFFER = 1
 )
 
-type TokenPair struct {
-	AccessToken      string    `json:"access_token"`
-	RefreshToken     string    `json:"refresh_token"`
-	ExpiresIn        int       `json:"expires_in"`
-	ExpiresAt        time.Time `json:"expires_at"`
-	RefreshExpiresAt time.Time `json:"refresh_expires_at"`
-}
-
-type RenewResult struct {
-	AccessToken string    `json:"access_token"`
-	ExpiresIn   int       `json:"expires_in"`
-	ExpiresAt   time.Time `json:"expires_at"`
-}
-
-func (s *Service) CreateToken(ctx context.Context, userID int64, permission, deviceID string) (*TokenPair, error) {
+func (s *Service) CreateToken(ctx context.Context, userID int64, permission, deviceID string) (*response.TokenPair, error) {
 	if deviceID == "" {
 		return nil, appError(http.StatusBadRequest, "device_id is required")
 	}
@@ -41,11 +28,14 @@ func (s *Service) CreateToken(ctx context.Context, userID int64, permission, dev
 		return nil, fmt.Errorf("service: generate refresh token: %w", err)
 	}
 
-	ttl := time.Duration(s.config.RefreshTTLDays) * 24 * time.Hour
+	ttl := time.Duration(s.Config.RefreshTTLDays) * 24 * time.Hour
 	now := time.Now()
-	key, _ := uuid.NewV7()
+	key, err := uuid.NewV7()
+	if err != nil {
+		return nil, fmt.Errorf("service: uuid: %w", err)
+	}
 
-	record, err := s.repo.Token.Create(ctx, &model.Token{
+	record, err := s.Repo.Create(ctx, &model.Token{
 		Key:          key,
 		UserID:       userID,
 		DeviceID:     deviceID,
@@ -56,9 +46,9 @@ func (s *Service) CreateToken(ctx context.Context, userID int64, permission, dev
 	if err != nil {
 		return nil, fmt.Errorf("service: persist refresh token: %w", err)
 	}
-	accessToken, expiresAt, err := s.jwt.Sign(userID, permission, deviceID, record.ID)
+	accessToken, expiresAt, err := s.Signer.Sign(userID, permission, deviceID, record.ID)
 	if err != nil {
-		_ = s.repo.Token.Delete(ctx, "id = ?", record.ID)
+		_ = s.Repo.Delete(ctx, "id = ?", record.ID)
 		return nil, fmt.Errorf("service: sign access token: %w", err)
 	}
 
@@ -68,14 +58,14 @@ func (s *Service) CreateToken(ctx context.Context, userID int64, permission, dev
 		Permission: permission,
 		TokenID:    record.ID,
 	}
-	if err := s.memory.StoreRefreshToken(ctx, refreshToken, data, ttl); err != nil {
-		_ = s.repo.Token.Delete(ctx, "refresh_token = ?", refreshToken)
+	if err := s.Cache.StoreRefreshToken(ctx, refreshToken, data, ttl); err != nil {
+		_ = s.Repo.Delete(ctx, "refresh_token = ?", refreshToken)
 		return nil, fmt.Errorf("service: cache refresh token: %w", err)
 	}
 
-	_ = s.memory.TrackTokenForDevice(ctx, userID, deviceID, refreshToken, ttl)
+	_ = s.Cache.TrackTokenForDevice(ctx, userID, deviceID, refreshToken, ttl)
 
-	return &TokenPair{
+	return &response.TokenPair{
 		AccessToken:      accessToken,
 		RefreshToken:     refreshToken,
 		ExpiresIn:        int(time.Until(expiresAt).Seconds()),
@@ -85,12 +75,12 @@ func (s *Service) CreateToken(ctx context.Context, userID int64, permission, dev
 }
 
 func (s *Service) ValidateToken(ctx context.Context, tokenStr string) (*jwt.Claims, error) {
-	claims, err := s.jwt.Verify(tokenStr)
+	claims, err := s.Signer.Verify(tokenStr)
 	if err != nil {
 		return nil, appError(http.StatusUnauthorized, "invalid or expired token")
 	}
 
-	blacklisted, err := s.memory.IsTokenBlacklisted(ctx, claims.TokenID, s.blacklistWindowDays())
+	blacklisted, err := s.Cache.IsTokenBlacklisted(ctx, claims.TokenID, s.blacklistWindowDays())
 	if err != nil {
 		return nil, fmt.Errorf("service: check blacklist: %w", err)
 	}
@@ -102,14 +92,14 @@ func (s *Service) ValidateToken(ctx context.Context, tokenStr string) (*jwt.Clai
 }
 
 func (s *Service) blacklistWindowDays() int {
-	window := (s.config.JWTExpireSecs + (SEC_PER_DAY - 1)) / SEC_PER_DAY
+	window := (s.Config.JWTExpireSecs + (SEC_PER_DAY - 1)) / SEC_PER_DAY
 	if window < 1 {
 		return 1
 	}
 	return window + BLACKLIST_BUFFER
 }
 
-func (s *Service) RenewToken(ctx context.Context, refreshToken, deviceID string) (*RenewResult, error) {
+func (s *Service) RenewToken(ctx context.Context, refreshToken, deviceID string) (*response.RenewResult, error) {
 	if refreshToken == "" {
 		return nil, appError(http.StatusBadRequest, "refresh_token is required")
 	}
@@ -117,7 +107,7 @@ func (s *Service) RenewToken(ctx context.Context, refreshToken, deviceID string)
 		return nil, appError(http.StatusBadRequest, "device_id is required")
 	}
 
-	data, err := s.memory.GetRefreshToken(ctx, refreshToken)
+	data, err := s.Cache.GetRefreshToken(ctx, refreshToken)
 	if err != nil {
 		return nil, fmt.Errorf("service: get refresh token: %w", err)
 	}
@@ -128,12 +118,12 @@ func (s *Service) RenewToken(ctx context.Context, refreshToken, deviceID string)
 		return nil, appError(http.StatusUnauthorized, "device mismatch")
 	}
 
-	accessToken, expiresAt, err := s.jwt.Sign(data.UserID, data.Permission, deviceID, data.TokenID)
+	accessToken, expiresAt, err := s.Signer.Sign(data.UserID, data.Permission, deviceID, data.TokenID)
 	if err != nil {
 		return nil, fmt.Errorf("service: sign renewed token: %w", err)
 	}
 
-	return &RenewResult{
+	return &response.RenewResult{
 		AccessToken: accessToken,
 		ExpiresIn:   int(time.Until(expiresAt).Seconds()),
 		ExpiresAt:   expiresAt,
@@ -145,7 +135,7 @@ func (s *Service) RevokeToken(ctx context.Context, refreshToken, deviceID string
 		return appError(http.StatusBadRequest, "refresh_token is required")
 	}
 
-	data, err := s.memory.GetRefreshToken(ctx, refreshToken)
+	data, err := s.Cache.GetRefreshToken(ctx, refreshToken)
 	if err != nil {
 		return fmt.Errorf("service: get refresh token: %w", err)
 	}
@@ -156,8 +146,8 @@ func (s *Service) RevokeToken(ctx context.Context, refreshToken, deviceID string
 		return appError(http.StatusUnauthorized, "device mismatch")
 	}
 
-	accessTTL := time.Duration(s.config.JWTExpireSecs) * time.Second
-	_ = s.memory.BlacklistToken(ctx, data.TokenID, accessTTL)
-	_ = s.repo.Token.Delete(ctx, "refresh_token = ?", refreshToken)
-	return s.memory.DeleteRefreshToken(ctx, refreshToken)
+	accessTTL := time.Duration(s.Config.JWTExpireSecs) * time.Second
+	_ = s.Cache.BlacklistToken(ctx, data.TokenID, accessTTL)
+	_ = s.Repo.Delete(ctx, "refresh_token = ?", refreshToken)
+	return s.Cache.DeleteRefreshToken(ctx, refreshToken)
 }
