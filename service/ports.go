@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/gauas/authorization-service/model"
 	"github.com/gauas/authorization-service/packages/jwt"
 	"github.com/gauas/authorization-service/packages/memory"
 )
@@ -14,8 +13,8 @@ type Config struct {
 	RefreshTTLDays int
 }
 
-type TokenRepository interface {
-	Create(ctx context.Context, entity *model.Token) (*model.Token, error)
+type Repository[T any] interface {
+	Create(ctx context.Context, entity *T) (*T, error)
 	Delete(ctx context.Context, args ...interface{}) error
 }
 

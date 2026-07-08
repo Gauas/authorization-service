@@ -24,7 +24,7 @@ func main() {
 	cache.StartBlacklistGC(context.Background(), cfg.RefreshTTLDays)
 
 	svc := service.New(
-		repository.TokenRepository(repo),
+		repo.Tokens(),
 		cache,
 		jwt.NewManager(cfg.JWTSecretKey, cfg.JWTExpireSecs),
 		service.Config{JWTExpireSecs: cfg.JWTExpireSecs, RefreshTTLDays: cfg.RefreshTTLDays},
