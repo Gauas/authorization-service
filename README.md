@@ -1,36 +1,7 @@
-# Authorization Service
+# Retired Authorization Service
 
-Lightweight Traefik ForwardAuth service. It verifies access tokens, checks session revocation in Redis, and returns trusted identity headers. It does not issue tokens, manage accounts, or proxy requests to backend services.
+This repository previously ran Traefik ForwardAuth for every protected API request, verified Gauas access JWTs, consulted Redis for revoked session IDs, and injected `X-Gauas-*` identity headers. That service has been retired from the target architecture.
 
-## Request path
+Identity Service now owns login, sessions, token signing and JWKS. HunterJob verifies Bearer JWTs locally with cached JWKS and keeps application authorization in its own domain. Traefik routes requests without ForwardAuth. Logout revokes refresh sessions; issued access tokens expire after a short lifetime.
 
-```text
-Traefik -> GET /v1/authorization/forward-auth
-             -> verify EdDSA JWT from cached JWKS
-             -> check revoked:sid:<session-id> in Redis
-             -> return 204 and X-Gauas-* identity headers
-Traefik -> destination backend
-```
-
-RabbitMQ and Kafka are selected from the `QUEUE_URL` scheme (`amqp`, `amqps`, or `kafka`). Revocation events are consumed from the durable `auth.session.revoked` destination and written to Redis with the remaining token lifetime as TTL.
-
-## Configuration
-
-Required:
-
-- `JWKS_URL` (the account/authentication service `/.well-known/jwks.json` endpoint)
-- `JWT_ISSUER`
-- `JWT_AUDIENCE`
-- `REDIS_URL`
-- `QUEUE_URL`
-
-Only EdDSA tokens with a `kid` are accepted. Shared-secret JWT verification is not supported.
-
-## Run
-
-```bash
-go test ./...
-go run ./cmd/forwardauth
-```
-
-Kubernetes resources and the `gauas-protected` middleware are owned by the Argo CD GitOps repository. Attach that middleware only to protected routes; public authentication routes must not use it.
+The old source, container build and image workflow were removed from this repo. The Git history retains them if an audit or rollback is required. Do not deploy this repository's old image during migration.
